@@ -31,11 +31,15 @@ LOCAL_CONFIG_FILE = "config.json.local"
 def read_json_file(path: str) -> dict:
     try:
         with open(path, encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
     except FileNotFoundError:
         return {}
     except json.JSONDecodeError as exc:
         sys.exit(f"[ERROR] {path} is not valid JSON: {exc}")
+
+    if not isinstance(data, dict):
+        sys.exit(f"[ERROR] {path} must contain a JSON object.")
+    return data
 
 
 def load_config() -> dict:
