@@ -3,7 +3,8 @@ Discord Channel Activity Checker
 Extracts user IDs, usernames, and display names of members who sent a message
 or reacted in a channel between two dates.
 
-Configuration is read from config.json (channel_id, guild_id, token).
+Configuration is read from config.json (channel_id, guild_id, token), with
+values in the gitignored config.json.local taking precedence.
 Supports checkpoint/resume: if the run is interrupted, restart with the same
 dates and it will continue from where it left off.
 """
@@ -23,23 +24,30 @@ from datetime import datetime, timezone
 # Config
 # ---------------------------------------------------------------------------
 CONFIG_FILE = "config.json"
+# Gitignored; values here override CONFIG_FILE. Put the real secrets here.
+LOCAL_CONFIG_FILE = "config.json.local"
+
+
+def read_json_file(path: str) -> dict:
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError as exc:
+        sys.exit(f"[ERROR] {path} is not valid JSON: {exc}")
 
 
 def load_config() -> dict:
-    try:
-        with open(CONFIG_FILE, encoding="utf-8") as f:
-            cfg = json.load(f)
-    except FileNotFoundError:
-        sys.exit(
-            f"[ERROR] {CONFIG_FILE} not found. "
-            "Create it with channel_id, guild_id, and token."
-        )
-    except json.JSONDecodeError as exc:
-        sys.exit(f"[ERROR] {CONFIG_FILE} is not valid JSON: {exc}")
+    cfg = read_json_file(CONFIG_FILE)
+    cfg.update(read_json_file(LOCAL_CONFIG_FILE))
 
     for key in ("channel_id", "guild_id", "token"):
         if not cfg.get(key) or cfg[key].startswith("YOUR_"):
-            sys.exit(f"[ERROR] Missing or placeholder value for '{key}' in {CONFIG_FILE}.")
+            sys.exit(
+                f"[ERROR] Missing or placeholder value for '{key}'. "
+                f"Set it in {LOCAL_CONFIG_FILE}."
+            )
 
     return cfg
 
