@@ -1,2 +1,3 @@
 active_users_*.csv
 checkpoint_*.json
+config.json.local
